@@ -33,4 +33,18 @@ class Graph
       how_many_moves(dequeued_node, counter, queue1, queue2)
     end
   end
+
+  def find_path(node = root, result = [], children = node.next_nodes.shuffle)
+    result << node
+    return if node == goal
+
+    children.each do |child|
+      next if result.include?(child)
+      next if result.size == depth && child != goal
+
+      find_path(child, result)
+      return result if result.last == goal
+    end
+    result.pop
+  end
 end
