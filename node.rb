@@ -1,49 +1,41 @@
 class Node
   include Comparable
+  attr_accessor :data, :distance, :predecessor
 
-  attr_accessor :data
+  @@all_knight_moves = [[-2, -1], [-2, 1], [-1, -2], [-1, 2], [1, 2], [1, -2], [2, -1], [2, 1]]
 
   def initialize(data)
     @data = data
+    @distance = nil
+    @predecessor = nil
   end
 
   def <=>(other)
     data <=> other.data
   end
 
-  def valid_next_coordinates
-    temp = []
-    array = [
-      [-2, -1],
-      [-2, 1],
-      [-1, -2],
-      [-1, 2],
-      [1, -2],
-      [1, 2],
-      [2, -1],
-      [2, 1]
-    ]
-    0.upto(7) do |i|
-      candidate = [data, array[i]].transpose.map(&:sum)
-      temp << candidate if candidate[0].between?(0, 7) && candidate[1].between?(0, 7)
-    end
-    temp
+  def fill_values(dist, prev)
+    self.distance = dist
+    self.predecessor = prev
   end
 
-  def next_nodes
-    valid_next_coordinates.map do |coordinate|
-      x, y = coordinate
-      array_of_nodes[x][y]
+  def possible_children(nodes)
+    array = @@all_knight_moves.map do |element|
+      [data, element].transpose.map(&:sum)
     end
+    array = array.select do |coordinate|
+      within_limits?(coordinate)
+    end
+    coordinate_to_nodes(array, nodes).shuffle
   end
 
-  def array_of_nodes
-    array = Array.new(8) { Array.new(8) { ' ' } }
-    0.upto(7) do |i|
-      0.upto(7) do |j|
-        array[i][j] = Node.new([i, j])
-      end
+  def within_limits?(array)
+    return array if array.all? { |n| n.between?(0, 7) }
+  end
+
+  def coordinate_to_nodes(coordinates, nodes)
+    coordinates.map do |coordinate|
+      nodes.find { |node| node.data == coordinate }
     end
-    array
   end
 end

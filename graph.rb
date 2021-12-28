@@ -1,50 +1,64 @@
+require_relative 'board'
+require 'io/console'
+
 class Graph
-  attr_reader :root, :goal, :depth
+  include Board
+  attr_accessor :all_nodes, :root, :goal
 
-  def initialize(starting_node, end_node)
-    @root = Node.new(starting_node)
-    @goal = Node.new(end_node)
-    @depth = how_many_moves
+  def initialize(root, goal)
+    @all_nodes = create_nodes
+    @root = all_nodes.find { |node| node.data == root }
+    @root.distance = 0
+    @goal = all_nodes.find { |node| node.data == goal }
   end
 
-  def how_many_moves(node = root, counter = 0, queue1 = [], queue2 = [])
-    if node == goal
-      counter
-    elsif queue1.empty?
-      if queue2.any?
-        queue1 = queue2
-        queue2 = []
-        node.next_nodes.each { |child| queue1 << child }
-        queue2 = queue2.uniq { |elem| elem.data }
-        counter += 1
-        dequeued_node = queue1.shift
-        how_many_moves(dequeued_node, counter, queue1, queue2)
-      else
-        node.next_nodes.each { |child| queue1 << child }
-        queue1 = queue1.uniq { |elem| elem.data }
-        counter += 1
-        dequeued_node = queue1.shift
-        how_many_moves(dequeued_node, counter, queue1, queue2)
+  def create_coordinates
+    array = []
+    0.upto(7) do |i|
+      0.upto(7) do |j|
+        array << [i, j]
       end
-    else
-      node.next_nodes.each { |child| queue2 << child }
-      queue2 = queue2.uniq { |elem| elem.data }
-      dequeued_node = queue1.shift
-      how_many_moves(dequeued_node, counter, queue1, queue2)
+    end
+    array
+  end
+
+  def create_nodes
+    create_coordinates.map { |coord| Node.new(coord) }
+  end
+
+  def build_graph(queue = [root])
+    while queue.size.positive?
+      dequeued = queue.shift
+      dequeued.possible_children(all_nodes).each do |node|
+        next if node.distance
+
+        node.fill_values(dequeued.distance + 1, dequeued)
+        queue << node
+      end
     end
   end
 
-  def find_path(node = root, result = [], children = node.next_nodes.shuffle)
-    result << node
-    return if node == goal
-
-    children.each do |child|
-      next if result.include?(child)
-      next if result.size == depth && child != goal
-
-      find_path(child, result)
-      return result if result.last == goal
+  def correct_path_order
+    array = []
+    temp = goal
+    until temp.nil?
+      array << temp.data
+      temp = temp.predecessor
     end
-    result.pop
+    array.reverse
+  end
+
+  def pause
+    puts 'Press any key for next move'
+    $stdin.getch
+  end
+
+  def show_path
+    correct_path_order.each do |coordinate|
+      show_board(coordinate)
+      return puts 'Finish!' if coordinate == correct_path_order.last
+
+      pause
+    end
   end
 end
